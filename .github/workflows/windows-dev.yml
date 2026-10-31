@@ -1,0 +1,78 @@
+name: Windows development session
+run-name: Antigravity Windows porting — ${{ inputs.source_repository }} (${{ inputs.minutes }} min)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repository:
+        description: 'Repository GitHub publik untuk di-port: owner/repo'
+        required: true
+        type: string
+      source_ref:
+        description: 'Branch, tag, atau commit (kosong = default branch)'
+        required: false
+        default: ''
+        type: string
+      task:
+        description: 'Tujuan porting, misalnya: port CLI Linux ke Windows'
+        required: true
+        type: string
+      minutes:
+        description: 'Durasi setelah RDP siap (maksimal 180 menit)'
+        required: true
+        default: '120'
+        type: choice
+        options: ['30', '60', '120', '180']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-development-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  development:
+    runs-on: windows-2022
+    # Includes provisioning, an up-to-180-minute session, and cleanup/export.
+    timeout-minutes: 210
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Check out workflow scripts
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare development workspace and private RDP
+        timeout-minutes: 20
+        env:
+          TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+          RDP_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+          SOURCE_REPOSITORY: ${{ inputs.source_repository }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+          PORTING_TASK: ${{ inputs.task }}
+        run: ./scripts/Start-DevSession.ps1
+
+      - name: Development session (bounded, no automatic restart)
+        env:
+          SESSION_MINUTES: ${{ inputs.minutes }}
+        run: ./scripts/Wait-DevSession.ps1
+
+      - name: Close RDP and sign out of Tailscale
+        if: ${{ always() }}
+        timeout-minutes: 3
+        run: ./scripts/Stop-DevSession.ps1
+
+      # Only exports deliberately created by the user. Never upload user profiles,
+      # Google/Antigravity credentials, or the source workspace automatically.
+      - name: Upload manually exported commits
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: porting-work-${{ github.run_id }}-${{ github.run_attempt }}
+          path: C:/Dev/exports/*.bundle
+          if-no-files-found: ignore
+          retention-days: 7
+          compression-level: 0
