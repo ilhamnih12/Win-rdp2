@@ -1,0 +1,10 @@
+{
+  "version": "2.28.2",
+  "architecture": "x64",
+  "installerUrl": "https://storage.googleapis.com/antigravity-public/antigravity-hub/2.28.2-5937220255875072/windows-x64/Antigravity-x64.exe",
+  "sha256": "86AD551F5B6587DD5F3307A0C9D8085CE6F46094CA2F809E3DD3F341615701D0",
+  "publisherOrganization": "Google LLC",
+  "scope": "user",
+  "manifestCommit": "4d1a890c48e686804d40c5cbcd8edff326dff845",
+  "manifestUrl": "https://github.com/microsoft/winget-pkgs/blob/4d1a890c48e686804d40c5cbcd8edff326dff845/manifests/g/Google/Antigravity/2.28.2/Google.Antigravity.installer.yaml"
+}
